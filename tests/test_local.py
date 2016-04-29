@@ -11,6 +11,7 @@
 import pytest
 
 import time
+import copy
 from threading import Thread
 
 from werkzeug import local
@@ -156,3 +157,27 @@ def test_custom_idents():
     assert stack.top['foo'] == 23
     stack.pop()
     assert stack.top is None
+
+
+def test_deepcopy_on_proxy():
+    class Foo(object):
+        attr = 42
+
+        def __copy__(self):
+            return self
+
+        def __deepcopy__(self, memo):
+            return self
+    f = Foo()
+    p = local.LocalProxy(lambda: f)
+    assert p.attr == 42
+    assert copy.deepcopy(p) is f
+    assert copy.copy(p) is f
+
+    a = []
+    p2 = local.LocalProxy(lambda: [a])
+    assert copy.copy(p2) == [a]
+    assert copy.copy(p2)[0] is a
+
+    assert copy.deepcopy(p2) == [a]
+    assert copy.deepcopy(p2)[0] is not a

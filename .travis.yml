@@ -1,32 +1,58 @@
+sudo: false
 language: python
 python:
-    - "2.6"
-    - "2.7"
-    - "pypy"
-    - "3.3"
-    - "3.4"
+    - 2.6
+    - 2.7
+    - pypy
+    - 3.4
+    - 3.5
+env:
+    - TOXENV=py-normal
+    - TOXENV=py-uwsgi
+
+matrix:
+    exclude:
+        - python: pypy
+          env: TOXENV=py-uwsgi
+    include:
+        - os: osx
+          language: generic
+          env: TOXENV=py-normal
+
+os: linux
+
+before_install:
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+        brew update;
+        brew install python3 redis memcached;
+        virtualenv ~/py-env -p python3;
+        . ~/py-env/bin/activate;
+      fi
+    # Travis uses an outdated PyPy, this installs the most recent one.
+    # This makes the tests run on Travis' legacy infrastructure, but so be it.
+    # temporary pyenv installation to get pypy-2.6 before container infra upgrade
+    - if [ "$TRAVIS_PYTHON_VERSION" = "pypy" ]; then
+        git clone https://github.com/yyuu/pyenv.git ~/.pyenv;
+        PYENV_ROOT="$HOME/.pyenv";
+        PATH="$PYENV_ROOT/bin:$PATH";
+        eval "$(pyenv init -)";
+        pyenv install pypy-4.0.1;
+        pyenv global pypy-4.0.1;
+      fi
+    - python --version
 
 install:
-    # Travis uses an outdated PyPy, this installs the most recent one.
-    - "[[ ${TRAVIS_PYTHON_VERSION} == pypy ]] && sudo add-apt-repository -y ppa:pypy/ppa || true"
-    - "[[ ${TRAVIS_PYTHON_VERSION} == pypy ]] && sudo apt-get -y update && sudo apt-get -y install pypy || true"
-    - "[[ ${TRAVIS_PYTHON_VERSION} == pypy ]] && sudo rm -rf /usr/local/pypy/bin || true"
-    - pip install tox>=1.8 flake8
+    - pip install tox flake8
 
 script:
-    - tox -e $(echo py$TRAVIS_PYTHON_VERSION | tr -d . | sed -e 's/pypypy/pypy/')
+    - tox
     - make stylecheck
 
 branches:
-  except:
-    - website
+    only:
+        - master
+        - auto
+        - /^.*-maintenance$/
 
 notifications:
   email: false
-  irc:
-    channels:
-      - "chat.freenode.net#pocoo"
-    on_success: change
-    on_failure: always
-    use_notice: true
-    skip_join: true

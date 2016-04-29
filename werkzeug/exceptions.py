@@ -201,6 +201,14 @@ class SecurityError(BadRequest):
     """
 
 
+class BadHost(BadRequest):
+
+    """Raised if the submitted host is badly formatted.
+
+    .. versionadded:: 0.11.2
+    """
+
+
 class Unauthorized(HTTPException):
 
     """*401* `Unauthorized`
@@ -504,6 +512,19 @@ class RequestHeaderFieldsTooLarge(HTTPException):
     code = 431
     description = (
         'One or more header fields exceeds the maximum size.'
+    )
+
+
+class UnavailableForLegalReasons(HTTPException):
+
+    """*451* `Unavailable For Legal Reasons`
+
+    This status code indicates that the server is denying access to the
+    resource as a consequence of a legal demand.
+    """
+    code = 451
+    description = (
+        'Unavailable for legal reasons.'
     )
 
 

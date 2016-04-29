@@ -892,3 +892,23 @@ class TestAccept(object):
         assert accept.best_match(['asterisk', 'times'], default=None) == \
             'times'
         assert accept.best_match(['asterisk'], default=None) is None
+
+
+class TestFileStorage(object):
+    storage_class = datastructures.FileStorage
+
+    def test_mimetype_always_lowercase(self):
+        file_storage = self.storage_class(content_type='APPLICATION/JSON')
+        assert file_storage.mimetype == 'application/json'
+
+    def test_bytes_proper_sentinel(self):
+        # ensure we iterate over new lines and don't enter into an infinite loop
+        import io
+        unicode_storage = self.storage_class(io.StringIO(u"one\ntwo"))
+        for idx, line in enumerate(unicode_storage):
+            assert idx < 2
+        assert idx == 1
+        binary_storage = self.storage_class(io.BytesIO(b"one\ntwo"))
+        for idx, line in enumerate(binary_storage):
+            assert idx < 2
+        assert idx == 1

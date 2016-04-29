@@ -383,7 +383,7 @@ class BaseRequest(object):
     def close(self):
         """Closes associated resources of this request object.  This
         closes all file handles explicitly.  You can also use the request
-        object in a with statement with will automatically close it.
+        object in a with statement which will automatically close it.
 
         .. versionadded:: 0.9
         """
@@ -648,7 +648,7 @@ class BaseRequest(object):
     is_run_once = environ_property('wsgi.run_once', doc='''
         boolean that is `True` if the application will be executed only
         once in a process lifetime.  This is the case for CGI for example,
-        but it's not guaranteed that the exeuction only happens one time.''')
+        but it's not guaranteed that the execution only happens one time.''')
 
 
 class BaseResponse(object):
@@ -688,7 +688,7 @@ class BaseResponse(object):
     To enforce a new type of already existing responses you can use the
     :meth:`force_type` method.  This is useful if you're working with different
     subclasses of response objects and you want to post process them with a
-    know interface.
+    known interface.
 
     Per default the request object will assume all the text data is `utf-8`
     encoded.  Please refer to `the unicode chapter <unicode.txt>`_ for more
@@ -717,7 +717,7 @@ class BaseResponse(object):
     :param content_type: the content type for the request.  See notice above.
     :param direct_passthrough: if set to `True` :meth:`iter_encoded` is not
                                called before iteration which makes it
-                               possible to pass special iterators though
+                               possible to pass special iterators through
                                unchanged (see :func:`wrap_file` for more
                                details.)
     """
@@ -993,7 +993,7 @@ class BaseResponse(object):
         return _iter_encoded(self.response, self.charset)
 
     def set_cookie(self, key, value='', max_age=None, expires=None,
-                   path='/', domain=None, secure=None, httponly=False):
+                   path='/', domain=None, secure=False, httponly=False):
         """Sets a cookie. The parameters are the same as in the cookie `Morsel`
         object in the Python standard library but it accepts unicode data, too.
 
@@ -1003,17 +1003,27 @@ class BaseResponse(object):
                         the cookie should last only as long as the client's
                         browser session.
         :param expires: should be a `datetime` object or UNIX timestamp.
+        :param path: limits the cookie to a given path, per default it will
+                     span the whole domain.
         :param domain: if you want to set a cross-domain cookie.  For example,
                        ``domain=".example.com"`` will set a cookie that is
                        readable by the domain ``www.example.com``,
                        ``foo.example.com`` etc.  Otherwise, a cookie will only
                        be readable by the domain that set it.
-        :param path: limits the cookie to a given path, per default it will
-                     span the whole domain.
+        :param secure: If `True`, the cookie will only be available via HTTPS
+        :param httponly: disallow JavaScript to access the cookie.  This is an
+                         extension to the cookie standard and probably not
+                         supported by all browsers.
         """
-        self.headers.add('Set-Cookie', dump_cookie(key, value, max_age,
-                                                   expires, path, domain, secure, httponly,
-                                                   self.charset))
+        self.headers.add('Set-Cookie', dump_cookie(key,
+                                                   value=value,
+                                                   max_age=max_age,
+                                                   expires=expires,
+                                                   path=path,
+                                                   domain=domain,
+                                                   secure=secure,
+                                                   httponly=httponly,
+                                                   charset=self.charset))
 
     def delete_cookie(self, key, path='/', domain=None):
         """Delete a cookie.  Fails silently if key doesn't exist.
@@ -1621,13 +1631,13 @@ class CommonRequestDescriptorsMixin(object):
 
     @property
     def mimetype(self):
-        """Like :attr:`content_type` but without parameters (eg, without
-        charset, type etc.).  For example if the content
-        type is ``text/html; charset=utf-8`` the mimetype would be
+        """Like :attr:`content_type`, but without parameters (eg, without
+        charset, type etc.) and always lowercase.  For example if the content
+        type is ``text/HTML; charset=utf-8`` the mimetype would be
         ``'text/html'``.
         """
         self._parse_content_type()
-        return self._parsed_content_type[0]
+        return self._parsed_content_type[0].lower()
 
     @property
     def mimetype_params(self):

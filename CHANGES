@@ -1,10 +1,125 @@
 Werkzeug Changelog
 ==================
 
+Version 0.12
+------------
+
+Unreleased.
+
+- Spit out big deprecation warnings for werkzeug.script
+- Use `inspect.getfullargspec` internally when available as
+  `inspect.getargspec` is gone in 3.6
+- Added support for status code 451.
+- Improved the build error suggestions.  In particular only if
+  someone stringifies the error will the suggestions be calculated.
+- Added support for uWSGI's caching backend.
+- Fix a bug where iterating over a `FileStorage` would result in an infinite
+  loop.
+- Datastructures now inherit from the relevant baseclasses from the
+  `collections` module in the stdlib. See #794.
+- Add support for recognizing NetBSD, OpenBSD, and FreeBSD platforms in the
+  user agent string.
+- Recognize SeaMonkey browser name and version correctly
+
+Version 0.11.10
+---------------
+
+- Fixed a bug that occurs when running on Python 2.6 and using a broken locale.
+  See pull request #912.
+
+Version 0.11.9
+--------------
+
+Released on April 24th 2016.
+
+- Corrected an issue that caused the debugger not to use the
+  machine GUID on POSIX systems.
+- Corrected an Unicode error on Python 3 for the debugger's
+  PIN usage.
+- Corrected the timestamp verification in the pin debug code.
+  Without this fix the pin was remebered until too long.
+
+Version 0.11.8
+--------------
+
+Released on April 15th 2016.
+
+- fixed a problem with the machine GUID detection code on OS X
+  on Python 3.
+
+Version 0.11.7
+--------------
+
+Released on April 14th 2016.
+
+- fixed a regression on Python 3 for the debugger.
+
+Version 0.11.6
+--------------
+
+Released on April 14th 2016.
+
+- werkzeug.serving: Still show the client address on bad requests.
+- improved the PIN based protection for the debugger to make it harder to
+  brute force via trying cookies.  Please keep in mind that the debugger
+  *is not intended for running on production environments*
+- increased the pin timeout to a week to make it less annoying for people
+  which should decrease the change that users disable the pin check
+  entirely.
+- werkzeug.serving: Fix broken HTTP_HOST when path starts with double slash.
+
+Version 0.11.5
+--------------
+
+Released on March 22nd 2016.
+
+- werkzeug.serving: Fix crash when attempting SSL connection to HTTP server.
+
+Version 0.11.4
+--------------
+
+Released on February 14th 2016.
+
+- Fixed werkzeug.serving not working from -m flag.
+- Fixed incorrect weak etag handling.
+
+Version 0.11.3
+--------------
+
+Released on December 20th 2015.
+
+- Fixed an issue with copy operations not working against
+  proxies.
+- Changed the logging operations of the development server to
+  correctly log where the server is running in all situations
+  again.
+- Fixed another regression with SSL wrapping similar to the
+  fix in 0.11.2 but for a different code path.
+
+Version 0.11.2
+--------------
+
+Released on November 12th 2015.
+
+- Fix inheritable sockets on Windows on Python 3.
+- Fixed an issue with the forking server not starting any longer.
+- Fixed SSL wrapping on platforms that supported opening sockets
+  by file descriptor.
+- No longer log from the watchdog reloader.
+- Unicode errors in hosts are now better catched or converted into
+  bad request errors.
+
+Version 0.11.1
+--------------
+
+Released on November 10th 2015.
+
+- Fixed a regression on Python 3 in the debugger.
+
 Version 0.11
 ------------
 
-(release date and codename to be decided)
+Released on November 8th 2015, codename Gleisbaumaschine.
 
 - Added ``reloader_paths`` option to ``run_simple`` and other functions in
   ``werkzeug.serving``. This allows the user to completely override the Python
@@ -19,6 +134,32 @@ Version 0.11
   version would be extracted (pull request ``#703``).
 - Fixed issue where RedisCache set_many was broken for twemproxy, which doesn't
   support the default MULTI command (pull request ``#702``).
+- ``mimetype`` parameters on request and response classes are now always
+  converted to lowercase.
+- Changed cache so that cache never expires if timeout is 0. This also fixes
+  an issue with redis setex (issue ``#550``)
+- Werkzeug now assumes ``UTF-8`` as filesystem encoding on Unix if Python
+  detected it as ASCII.
+- New optional `has` method on caches.
+- Fixed various bugs in `parse_options_header` (pull request ``#643``).
+- If the reloader is enabled the server will now open the socket in the parent
+  process if this is possible.  This means that when the reloader kicks in
+  the connection from client will wait instead of tearing down.  This does
+  not work on all Python versions.
+- Implemented PIN based authentication for the debugger.  This can optionally
+  be disabled but is discouraged.  This change was necessary as it has been
+  discovered that too many people run the debugger in production.
+- Devserver no longer requires SSL module to be installed.
+
+Version 0.10.5
+--------------
+
+(bugfix release, release date yet to be decided)
+
+- Reloader: Correctly detect file changes made by moving temporary files over
+  the original, which is e.g. the case with PyCharm (pull request ``#722``).
+- Fix bool behavior of ``werkzeug.datastructures.ETags`` under Python 3 (issue
+  ``#744``).
 
 Version 0.10.4
 --------------
@@ -164,6 +305,11 @@ Version 0.9.6
 - Added a safe conversion for IRI to URI conversion and use that
   internally to work around issues with spec violations for
   protocols such as ``itms-service``.
+
+Version 0.9.7
+-------------
+
+- Fixed uri_to_iri() not re-encoding hashes in query string parameters.
 
 Version 0.9.5
 -------------

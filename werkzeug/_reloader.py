@@ -105,7 +105,8 @@ class ReloaderLoop(object):
                     if isinstance(value, text_type):
                         new_environ[key] = value.encode('iso-8859-1')
 
-            exit_code = subprocess.call(args, env=new_environ)
+            exit_code = subprocess.call(args, env=new_environ,
+                                        close_fds=False)
             if exit_code != 3:
                 return exit_code
 
@@ -204,17 +205,10 @@ class WatchdogReloaderLoop(ReloaderLoop):
                     try:
                         watches[path] = observer.schedule(
                             self.event_handler, path, recursive=True)
-                    except OSError as e:
-                        # Extract message from exception
-                        message = str(e)
-
-                        # TODO: This check is hardcoded, should find
-                        # better way to differentiate errors from watchdog
-                        if message != "Path is not a directory":
-                            # Log the exception
-                            _log('error', message)
-
-                        # Clear this path from list of watches
+                    except OSError:
+                        # Clear this path from list of watches We don't want
+                        # the same error message showing again in the next
+                        # iteration.
                         watches[path] = None
                 to_delete.discard(path)
             for path in to_delete:

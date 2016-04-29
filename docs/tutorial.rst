@@ -11,7 +11,7 @@ layer and, of course, Werkzeug for the WSGI layer.
 
 You can use `pip` to install the required libraries::
 
-    pip install Jinja2 redis
+    pip install Jinja2 redis Werkzeug
 
 Also make sure to have a redis server running on your local machine.  If
 you are on OS X, you can use `brew` to install it::
@@ -472,4 +472,4 @@ Look at the implementation in the example dictionary in the Werkzeug
 repository to see a version of this tutorial with some small refinements
 such as a custom 404 page.
 
--   `shortly in the example folder <https://github.com/mitsuhiko/werkzeug/blob/master/examples/shortly>`_
+-   `shortly in the example folder <https://github.com/pallets/werkzeug/blob/master/examples/shortly>`_

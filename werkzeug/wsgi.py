@@ -10,7 +10,6 @@
 """
 import re
 import os
-import sys
 import posixpath
 import mimetypes
 from itertools import chain
@@ -25,6 +24,7 @@ from werkzeug._compat import iteritems, text_type, string_types, \
 from werkzeug._internal import _empty_stream, _encode_idna
 from werkzeug.http import is_resource_modified, http_date
 from werkzeug.urls import uri_to_iri, url_quote, url_parse, url_join
+from werkzeug.filesystem import get_filesystem_encoding
 
 
 def responder(f):
@@ -113,14 +113,20 @@ def host_is_trusted(hostname, trusted_list):
             hostname = hostname.rsplit(':', 1)[0]
         return _encode_idna(hostname)
 
-    hostname = _normalize(hostname)
+    try:
+        hostname = _normalize(hostname)
+    except UnicodeError:
+        return False
     for ref in trusted_list:
         if ref.startswith('.'):
             ref = ref[1:]
             suffix_match = True
         else:
             suffix_match = False
-        ref = _normalize(ref)
+        try:
+            ref = _normalize(ref)
+        except UnicodeError:
+            return False
         if ref == hostname:
             return True
         if suffix_match and hostname.endswith('.' + ref):
@@ -182,7 +188,7 @@ def get_input_stream(environ, safe_fallback=True):
     .. versionadded:: 0.9
 
     :param environ: the WSGI environ to fetch the stream from.
-    :param safe: indicates weather the function should use an empty
+    :param safe: indicates whether the function should use an empty
                  stream as safe fallback or just return the original
                  WSGI input stream if it can't wrap it safely.  The
                  default is to return an empty string in those cases.
@@ -191,7 +197,7 @@ def get_input_stream(environ, safe_fallback=True):
     content_length = get_content_length(environ)
 
     # A wsgi extension that tells us if the input is terminated.  In
-    # that case we return the stream unchanged as we know we can savely
+    # that case we return the stream unchanged as we know we can safely
     # read it until the end.
     if environ.get('wsgi.input_terminated'):
         return stream
@@ -559,7 +565,7 @@ class SharedDataMiddleware(object):
 
     def generate_etag(self, mtime, file_size, real_filename):
         if not isinstance(real_filename, bytes):
-            real_filename = real_filename.encode(sys.getfilesystemencoding())
+            real_filename = real_filename.encode(get_filesystem_encoding())
         return 'wzsdm-%d-%s-%s' % (
             mktime(mtime.timetuple()),
             file_size,
@@ -569,7 +575,7 @@ class SharedDataMiddleware(object):
     def __call__(self, environ, start_response):
         cleaned_path = get_path_info(environ)
         if PY2:
-            cleaned_path = cleaned_path.encode(sys.getfilesystemencoding())
+            cleaned_path = cleaned_path.encode(get_filesystem_encoding())
         # sanitize the path for non unix systems
         cleaned_path = cleaned_path.strip('/')
         for sep in os.sep, os.altsep:

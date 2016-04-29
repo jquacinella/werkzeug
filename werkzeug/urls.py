@@ -40,8 +40,10 @@ _hextobyte = dict(
 )
 
 
-_URLTuple = fix_tuple_repr(namedtuple('_URLTuple',
-                                      ['scheme', 'netloc', 'path', 'query', 'fragment']))
+_URLTuple = fix_tuple_repr(namedtuple(
+    '_URLTuple',
+    ['scheme', 'netloc', 'path', 'query', 'fragment']
+))
 
 
 class BaseURL(_URLTuple):
@@ -71,7 +73,10 @@ class BaseURL(_URLTuple):
         """
         rv = self.host
         if rv is not None and isinstance(rv, text_type):
-            rv = _encode_idna(rv)
+            try:
+                rv = _encode_idna(rv)
+            except UnicodeError:
+                rv = rv.encode('ascii', 'ignore')
         return to_native(rv, 'ascii', 'ignore')
 
     @property
@@ -605,8 +610,8 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
         uri = url_unparse(uri)
     uri = url_parse(to_unicode(uri, charset))
     path = url_unquote(uri.path, charset, errors, '%/;?')
-    query = url_unquote(uri.query, charset, errors, '%;/?:@&=+,$')
-    fragment = url_unquote(uri.fragment, charset, errors, '%;/?:@&=+,$')
+    query = url_unquote(uri.query, charset, errors, '%;/?:@&=+,$#')
+    fragment = url_unquote(uri.fragment, charset, errors, '%;/?:@&=+,$#')
     return url_unparse((uri.scheme, uri.decode_netloc(),
                         path, query, fragment))
 

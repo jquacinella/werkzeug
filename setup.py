@@ -49,9 +49,9 @@ Development Version
 The Werkzeug development version can be installed by cloning the git
 repository from `github`_::
 
-    git clone git@github.com:mitsuhiko/werkzeug.git
+    git clone git@github.com:pallets/werkzeug.git
 
-.. _github: http://github.com/mitsuhiko/werkzeug
+.. _github: http://github.com/pallets/werkzeug
 """
 import ast
 import re
@@ -104,6 +104,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],

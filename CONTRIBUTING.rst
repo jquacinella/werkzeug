@@ -7,10 +7,11 @@ Thanks for considering contributing to Werkzeug.
 Support questions
 =================
 
-Please, don't use the issue tracker for this. Check whether the ``#pocoo`` IRC
-channel on Freenode can help with your issue. If your problem is not strictly
-Werkzeug or Flask specific, ``#python`` is generally more active.
-`StackOverflow <https://stackoverflow.com/>`_ is also worth considering.
+Please, don't use the issue tracker for this. Check whether the `Pocoo IRC
+channel <http://www.pocoo.org/irc/>`_ can help with your issue. If your problem
+is not strictly Werkzeug- or Flask-specific, ``#python`` on Freenode is
+generally more active.  `StackOverflow <https://stackoverflow.com/>`_ is also
+worth considering.
 
 Reporting issues
 ================
@@ -24,12 +25,18 @@ Reporting issues
 Submitting patches
 ==================
 
+- Please do not use pull requests as a way to suggest behavior changes. Open an
+  issue for discussion first. This helps keeping the discussions of concept and
+  implementation separate.
+
 - Include tests if your patch is supposed to solve a bug, and explain
   clearly under which circumstances the bug happens. Make sure the test fails
   without your patch.
 
 - Try to follow `PEP8 <http://legacy.python.org/dev/peps/pep-0008/>`_, but you
   may ignore the line-length-limit if following it would make the code uglier.
+
+- Add an entry to ``CHANGES`` and your name to ``AUTHORS``.
 
 
 Running the testsuite
@@ -53,11 +60,9 @@ working on.  Travis is set up to run the full testsuite when you submit your
 pull request anyways.
 
 If you really want to test everything, you will have to install ``tox`` instead
-of ``pytest``. Currently we're depending on a development version of Tox
-because the released version is missing features we absolutely need. You can
-install it with::
+of ``pytest``. You can install it with::
 
-    pip install hg+https://bitbucket.org/hpk42/tox
+    pip install tox
 
 The ``tox`` command will then run all tests against multiple combinations
 Python versions and dependency versions.

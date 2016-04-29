@@ -9,16 +9,17 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
-import sys
 import codecs
 import mimetypes
 from copy import deepcopy
 from itertools import repeat
+from collections import Container, Iterable, Mapping, MutableSet
 
 from werkzeug._internal import _missing, _empty_stream
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
     PY2, text_type, integer_types, string_types, make_literal_wrapper, \
     to_native
+from werkzeug.filesystem import get_filesystem_encoding
 
 
 _locale_delim_re = re.compile(r'[_-]')
@@ -567,7 +568,23 @@ class MultiDict(TypeConversionDict):
         return dict(self.lists())
 
     def update(self, other_dict):
-        """update() extends rather than replaces existing key lists."""
+        """update() extends rather than replaces existing key lists:
+
+        >>> a = MultiDict({'x': 1})
+        >>> b = MultiDict({'x': 2, 'y': 3})
+        >>> a.update(b)
+        >>> a
+        MultiDict([('y', 3), ('x', 1), ('x', 2)])
+
+        If the value list for a key in ``other_dict`` is empty, no new values
+        will be added to the dict and the key will not be created:
+
+        >>> x = {'empty_list': []}
+        >>> y = MultiDict()
+        >>> y.update(x)
+        >>> y
+        MultiDict([])
+        """
         for key, value in iter_multi_items(other_dict):
             MultiDict.add(self, key, value)
 
@@ -850,7 +867,7 @@ def _unicodify_header_value(value):
 
 
 @native_itermethods(['keys', 'values', 'items'])
-class Headers(object):
+class Headers(Mapping):
 
     """An object that stores some headers.  It has a dict-like interface
     but is ordered and can store the same keys multiple times.
@@ -1580,10 +1597,8 @@ class Accept(ImmutableList):
             list.__init__(self, values)
         else:
             self.provided = True
-            values = [(a, b) for b, a in values]
-            values.sort()
-            values.reverse()
-            list.__init__(self, [(a, b) for b, a in values])
+            values = sorted(values, key=lambda x: (x[1], x[0]), reverse=True)
+            list.__init__(self, values)
 
     def _value_matches(self, value, item):
         """Check if a value matches a given accept item."""
@@ -1939,7 +1954,7 @@ class CallbackDict(UpdateDictMixin, dict):
         )
 
 
-class HeaderSet(object):
+class HeaderSet(MutableSet):
 
     """Similar to the :class:`ETags` class this implements a set-like structure.
     Unlike :class:`ETags` this is case insensitive and used for vary, allow, and
@@ -2093,7 +2108,7 @@ class HeaderSet(object):
         )
 
 
-class ETags(object):
+class ETags(Container, Iterable):
 
     """A set that can be used to check if one etag is present in a collection
     of etags.
@@ -2144,7 +2159,7 @@ class ETags(object):
             return '*'
         return ', '.join(
             ['"%s"' % x for x in self._strong] +
-            ['w/"%s"' % x for x in self._weak]
+            ['W/"%s"' % x for x in self._weak]
         )
 
     def __call__(self, etag=None, data=None, include_weak=False):
@@ -2157,8 +2172,10 @@ class ETags(object):
                 return True
         return etag in self._strong
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self.star_tag or self._strong or self._weak)
+
+    __nonzero__ = __bool__
 
     def __str__(self):
         return self.to_header()
@@ -2565,7 +2582,7 @@ class FileStorage(object):
             # This might not be if the name attribute is bytes due to the
             # file being opened from the bytes API.
             if not PY2 and isinstance(filename, bytes):
-                filename = filename.decode(sys.getfilesystemencoding(),
+                filename = filename.decode(get_filesystem_encoding(),
                                            'replace')
 
         self.filename = filename
@@ -2594,15 +2611,15 @@ class FileStorage(object):
 
     @property
     def mimetype(self):
-        """Like :attr:`content_type` but without parameters (eg, without
-        charset, type etc.).  For example if the content
-        type is ``text/html; charset=utf-8`` the mimetype would be
+        """Like :attr:`content_type`, but without parameters (eg, without
+        charset, type etc.) and always lowercase.  For example if the content
+        type is ``text/HTML; charset=utf-8`` the mimetype would be
         ``'text/html'``.
 
         .. versionadded:: 0.7
         """
         self._parse_content_type()
-        return self._parsed_content_type[0]
+        return self._parsed_content_type[0].lower()
 
     @property
     def mimetype_params(self):
@@ -2655,7 +2672,7 @@ class FileStorage(object):
         return getattr(self.stream, name)
 
     def __iter__(self):
-        return iter(self.readline, '')
+        return iter(self.stream)
 
     def __repr__(self):
         return '<%s: %r (%r)>' % (

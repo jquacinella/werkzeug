@@ -10,6 +10,7 @@
 """
 import pytest
 import os
+import random
 
 from werkzeug.contrib import cache
 
@@ -87,7 +88,7 @@ class CacheTests(object):
 
     def test_generic_expire(self, c, fast_sleep):
         assert c.set('foo', 'bar', 1)
-        fast_sleep(2)
+        fast_sleep(5)
         assert c.get('foo') is None
 
     def test_generic_add(self, c):
@@ -122,6 +123,39 @@ class CacheTests(object):
         assert c.set('bar', False)
         assert c.get('bar') in (False, 0)
 
+    def test_generic_no_timeout(self, c, fast_sleep):
+        # Timeouts of zero should cause the cache to never expire
+        c.set('foo', 'bar', 0)
+        fast_sleep(random.randint(1, 5))
+        assert c.get('foo') == 'bar'
+
+    def test_generic_timeout(self, c, fast_sleep):
+        # Check that cache expires when the timeout is reached
+        timeout = random.randint(1, 5)
+        c.set('foo', 'bar', timeout)
+        assert c.get('foo') == 'bar'
+        # sleep a bit longer than timeout to ensure there are no
+        # race conditions
+        fast_sleep(timeout + 5)
+        assert c.get('foo') is None
+
+    def test_generic_has(self, c):
+        assert c.has('foo') in (False, 0)
+        assert c.has('spam') in (False, 0)
+        assert c.set('foo', 'bar')
+        assert c.has('foo') in (True, 1)
+        assert c.has('spam') in (False, 0)
+        c.delete('foo')
+        assert c.has('foo') in (False, 0)
+        assert c.has('spam') in (False, 0)
+
+
+class TestSimpleCache(CacheTests):
+
+    @pytest.fixture
+    def make_cache(self):
+        return cache.SimpleCache
+
     def test_purge(self):
         c = cache.SimpleCache(threshold=2)
         c.set('a', 'a')
@@ -130,13 +164,6 @@ class CacheTests(object):
         c.set('d', 'd')
         # Cache purges old items *before* it sets new ones.
         assert len(c._cache) == 3
-
-
-class TestSimpleCache(CacheTests):
-
-    @pytest.fixture
-    def make_cache(self):
-        return cache.SimpleCache
 
 
 class TestFileSystemCache(CacheTests):
@@ -219,3 +246,24 @@ if memcache is not None:
             timeout = epoch + random.random() * 100
             c.set('foo', 'bar', timeout)
             assert c.get('foo') == 'bar'
+
+
+def _running_in_uwsgi():
+    try:
+        import uwsgi  # NOQA
+    except ImportError:
+        return False
+    else:
+        return True
+
+
+@pytest.mark.skipif(not _running_in_uwsgi(),
+                    reason="uWSGI module can't be imported outside of uWSGI")
+class TestUWSGICache(CacheTests):
+    _can_use_fast_sleep = False
+
+    @pytest.fixture
+    def make_cache(self, xprocess, request):
+        c = cache.UWSGICache(cache='werkzeugtest')
+        request.addfinalizer(c.clear)
+        return lambda: c
